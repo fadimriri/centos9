@@ -29,7 +29,13 @@ COPY <<EOF /start.sh
 #!/bin/bash
 
 # Log startup details
-echo "Starting SSH setup..." >> /tmp/startup.log
+PORT=8080
+echo "Port is \$PORT \n" >> /tmp/startup.log
+echo "INFO: Using hardcoded port 8080" >> /tmp/startup.log
+
+# Update SSH config with the static port
+sed -i "s/^#Port .*/Port $PORT/" /etc/ssh/sshd_config
+echo "INFO: Updated SSHD config to use port $PORT" >> /tmp/startup.log
 
 # Ensure $PORT is set, or use a default
 if [ -z "\$PORT" ]; then
@@ -47,7 +53,9 @@ echo "INFO: Updated SSHD config to use port \$PORT" >> /tmp/startup.log
 if [ -n "\$SSH_PASSWORD" ]; then
     echo "admin:\$SSH_PASSWORD" | chpasswd
 fi
-
+# Update SSH config with the static port
+sed -i "s/^#Port .*/Port $PORT/" /etc/ssh/sshd_config
+echo "INFO: Updated SSHD config to use port $PORT" >> /tmp/startup.log
 # Debug SSH configuration
 cat /etc/ssh/sshd_config >> /tmp/startup.log
 
