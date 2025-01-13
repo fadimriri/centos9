@@ -22,11 +22,14 @@ RUN useradd -m -s /bin/bash admin && \
     echo "admin:${SSH_PASSWORD}" | chpasswd && \
     echo "admin ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
-# Create startup script more reliably
+# Configure dynamic port for Railway
+RUN echo 'Port 22' >> /etc/ssh/sshd_config
+
+# Dynamic port assignment script
 COPY <<EOF /start.sh
 #!/bin/bash
 if [ -n "\$PORT" ]; then
-    sed -i "s/#Port 22/Port \$PORT/" /etc/ssh/sshd_config
+    sed -i "s/^Port .*/Port \$PORT/" /etc/ssh/sshd_config
 fi
 if [ -n "\$SSH_PASSWORD" ]; then
     echo "admin:\$SSH_PASSWORD" | chpasswd
@@ -36,8 +39,8 @@ EOF
 
 RUN chmod +x /start.sh
 
-# Expose default SSH port (Railway will override this with $PORT)
+# Expose SSH port
 EXPOSE 22
 
-# Start SSH service using the startup script
+# Start SSH service
 CMD ["/start.sh"]
