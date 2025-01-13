@@ -29,8 +29,13 @@ RUN echo 'Port 22' >> /etc/ssh/sshd_config && \
 # Dynamic port assignment script
 COPY <<EOF /start.sh
 #!/bin/bash
+
+# Log the provided port for debugging
+echo "Starting SSH on PORT: $PORT" >> /tmp/startup.log
+
 if [ -n "$PORT" ]; then
     sed -i "s/^Port .*/Port $PORT/" /etc/ssh/sshd_config
+    echo "ListenAddress 0.0.0.0" >> /etc/ssh/sshd_config
 fi
 if [ -n "$SSH_PASSWORD" ]; then
     echo "admin:$SSH_PASSWORD" | chpasswd
