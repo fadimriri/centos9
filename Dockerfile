@@ -22,16 +22,19 @@ RUN useradd -m -s /bin/bash admin && \
     echo "admin:${SSH_PASSWORD}" | chpasswd && \
     echo "admin ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
-# Create startup script
-RUN echo '#!/bin/bash\n\
-if [ -n "$PORT" ]; then\n\
-    sed -i "s/#Port 22/Port $PORT/" /etc/ssh/sshd_config\n\
-fi\n\
-if [ -n "$SSH_PASSWORD" ]; then\n\
-    echo "admin:$SSH_PASSWORD" | chpasswd\n\
-fi\n\
-exec /usr/sbin/sshd -D\n\
-' > /start.sh && chmod +x /start.sh
+# Create startup script more reliably
+COPY <<EOF /start.sh
+#!/bin/bash
+if [ -n "\$PORT" ]; then
+    sed -i "s/#Port 22/Port \$PORT/" /etc/ssh/sshd_config
+fi
+if [ -n "\$SSH_PASSWORD" ]; then
+    echo "admin:\$SSH_PASSWORD" | chpasswd
+fi
+exec /usr/sbin/sshd -D
+EOF
+
+RUN chmod +x /start.sh
 
 # Expose default SSH port (Railway will override this with $PORT)
 EXPOSE 22
