@@ -23,16 +23,17 @@ RUN useradd -m -s /bin/bash admin && \
     echo "admin ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 # Configure dynamic port for Railway
-RUN echo 'Port 22' >> /etc/ssh/sshd_config
+RUN echo 'Port 22' >> /etc/ssh/sshd_config && \
+    echo 'ListenAddress 0.0.0.0' >> /etc/ssh/sshd_config
 
 # Dynamic port assignment script
 COPY <<EOF /start.sh
 #!/bin/bash
-if [ -n "\$PORT" ]; then
-    sed -i "s/^Port .*/Port \$PORT/" /etc/ssh/sshd_config
+if [ -n "$PORT" ]; then
+    sed -i "s/^Port .*/Port $PORT/" /etc/ssh/sshd_config
 fi
-if [ -n "\$SSH_PASSWORD" ]; then
-    echo "admin:\$SSH_PASSWORD" | chpasswd
+if [ -n "$SSH_PASSWORD" ]; then
+    echo "admin:$SSH_PASSWORD" | chpasswd
 fi
 exec /usr/sbin/sshd -D
 EOF
