@@ -17,13 +17,24 @@ RUN mkdir /var/run/sshd && \
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
 # Create a user with sudo privileges
-# Note: In production, you should set these via Railway environment variables
+ENV SSH_PASSWORD=adminpass
 RUN useradd -m -s /bin/bash admin && \
-    echo "admin:${SSH_PASSWORD:-adminpass}" | chpasswd && \
+    echo "admin:${SSH_PASSWORD}" | chpasswd && \
     echo "admin ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
-# Expose SSH port
-EXPOSE ${PORT:-22}
+# Create startup script
+RUN echo '#!/bin/bash\n\
+if [ -n "$PORT" ]; then\n\
+    sed -i "s/#Port 22/Port $PORT/" /etc/ssh/sshd_config\n\
+fi\n\
+if [ -n "$SSH_PASSWORD" ]; then\n\
+    echo "admin:$SSH_PASSWORD" | chpasswd\n\
+fi\n\
+exec /usr/sbin/sshd -D\n\
+' > /start.sh && chmod +x /start.sh
 
-# Start SSH service
-CMD ["/usr/sbin/sshd", "-D"]
+# Expose default SSH port (Railway will override this with $PORT)
+EXPOSE 22
+
+# Start SSH service using the startup script
+CMD ["/start.sh"]
