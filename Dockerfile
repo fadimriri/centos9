@@ -5,11 +5,8 @@ FROM quay.io/centos/centos:stream9
 RUN dnf -y update && \
     dnf -y install \
     openssh-server \
-    openssh-clients \
-    sudo \
-    passwd \
-    && dnf clean all
-
+    sudo && \
+    dnf clean all
 
 # Configure SSH
 RUN mkdir /var/run/sshd && \
@@ -30,32 +27,12 @@ COPY <<EOF /start.sh
 
 # Log startup details
 PORT=8080
-echo "Port is \$PORT \n" >> /tmp/startup.log
-echo "INFO: Using hardcoded port 8080" >> /tmp/startup.log
+echo "INFO: Using hardcoded port $PORT" >> /tmp/startup.log
 
-# Update SSH config with the static port
+# Update SSH config with the port
 sed -i "s/^#Port .*/Port $PORT/" /etc/ssh/sshd_config
 echo "INFO: Updated SSHD config to use port $PORT" >> /tmp/startup.log
 
-# Ensure $PORT is set, or use a default
-if [ -z "\$PORT" ]; then
-    PORT=22  # Fallback to default SSH port if $PORT is not set
-    echo "WARN: \$PORT not set, using default port 22" >> /tmp/startup.log
-else
-    echo "INFO: \$PORT set to \$PORT" >> /tmp/startup.log
-fi
-
-# Update SSH config with the assigned port
-sed -i "s/^#Port .*/Port \$PORT/" /etc/ssh/sshd_config
-echo "INFO: Updated SSHD config to use port \$PORT" >> /tmp/startup.log
-
-# Update the admin users password if specified
-if [ -n "\$SSH_PASSWORD" ]; then
-    echo "admin:\$SSH_PASSWORD" | chpasswd
-fi
-# Update SSH config with the static port
-sed -i "s/^#Port .*/Port $PORT/" /etc/ssh/sshd_config
-echo "INFO: Updated SSHD config to use port $PORT" >> /tmp/startup.log
 # Debug SSH configuration
 cat /etc/ssh/sshd_config >> /tmp/startup.log
 
@@ -70,4 +47,3 @@ EXPOSE 22
 
 # Start SSH service
 CMD ["/start.sh"]
-
