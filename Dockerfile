@@ -5,8 +5,11 @@ FROM quay.io/centos/centos:stream9
 RUN dnf -y update && \
     dnf -y install \
     openssh-server \
-    sudo && \
-    dnf clean all
+    openssh-clients \
+    sudo \
+    passwd \
+    && dnf clean all
+
 
 # Configure SSH
 RUN mkdir /var/run/sshd && \
@@ -47,3 +50,4 @@ EXPOSE 22
 
 # Start SSH service
 CMD ["/start.sh"]
+
