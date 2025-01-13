@@ -10,26 +10,37 @@ RUN dnf -y update && \
     passwd \
     && dnf clean all
 
-    
 # Configure SSH
 RUN mkdir /var/run/sshd && \
-        ssh-keygen -A && \
-        sed -i 's/#PermitRootLogin yes/PermitRootLogin yes/' /etc/ssh/sshd_config && \
-        sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+    ssh-keygen -A && \
+    sed -i 's/#PermitRootLogin yes/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
-# Create a user with sudo privileges    
+# Create a user with sudo privileges
+ENV SSH_PASSWORD=adminpass
 RUN useradd -m -s /bin/bash admin && \
-    echo "admin:adminpass" | chpasswd && \
-    echo "admin ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers    
-# Copy public key to authorized_keys
-RUN mkdir -p /home/admin/.ssh && \
-    echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIKGash5O+WXezOcidxhJQqZemoHAISwDRjAteXKref4 fadi.mriri@umanlink.com" > /home/admin/.ssh/authorized_keys && \
-    chown -R admin:admin /home/admin/.ssh && \
-    chmod 700 /home/admin/.ssh && \
-    chmod 600 /home/admin/.ssh/authorized_keys
+    echo "admin:${SSH_PASSWORD}" | chpasswd && \
+    echo "admin ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Configure dynamic port for Railway
+RUN echo 'Port 22' >> /etc/ssh/sshd_config
+
+# Dynamic port assignment script
+COPY <<EOF /start.sh
+#!/bin/bash
+if [ -n "\$PORT" ]; then
+    sed -i "s/^Port .*/Port \$PORT/" /etc/ssh/sshd_config
+fi
+if [ -n "\$SSH_PASSWORD" ]; then
+    echo "admin:\$SSH_PASSWORD" | chpasswd
+fi
+exec /usr/sbin/sshd -D
+EOF
+
+RUN chmod +x /start.sh
 
 # Expose SSH port
 EXPOSE 22
 
 # Start SSH service
-CMD ["/usr/sbin/sshd", "-D"]
+CMD ["/start.sh"]
