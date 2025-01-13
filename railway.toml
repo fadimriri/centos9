@@ -13,4 +13,4 @@ type = "tcp"  # Specify TCP proxy for SSH
 port = 22     # Internal container port
 
 [services.main.tcp]
-external_port = 8080  # Map Railway's dynamic port
+external_port = 8080  # Map Railway's external port
