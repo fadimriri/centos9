@@ -28,6 +28,9 @@ RUN useradd -m -s /bin/bash admin && \
 COPY <<EOF /start.sh
 #!/bin/bash
 
+# Log startup details
+echo "Starting SSH setup..." >> /tmp/startup.log
+
 # Ensure $PORT is set, or use a default
 if [ -z "\$PORT" ]; then
     PORT=22  # Fallback to default SSH port if $PORT is not set
@@ -38,11 +41,15 @@ fi
 
 # Update SSH config with the assigned port
 sed -i "s/^#Port .*/Port \$PORT/" /etc/ssh/sshd_config
+echo "INFO: Updated SSHD config to use port \$PORT" >> /tmp/startup.log
 
 # Update the admin users password if specified
 if [ -n "\$SSH_PASSWORD" ]; then
     echo "admin:\$SSH_PASSWORD" | chpasswd
 fi
+
+# Debug SSH configuration
+cat /etc/ssh/sshd_config >> /tmp/startup.log
 
 # Start the SSH daemon
 exec /usr/sbin/sshd -D
@@ -55,3 +62,4 @@ EXPOSE 22
 
 # Start SSH service
 CMD ["/start.sh"]
+
