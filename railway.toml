@@ -1,17 +1,26 @@
+# Specify the build settings
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "./Dockerfile"
 
+# Deployment settings
 [deploy]
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
-healthcheckDisabled = true
+healthcheckDisabled = false
 
+# Services configuration
 [services]
+
+# Main service for SSH
 [services.main]
-type = "tcp"  # Specify TCP proxy for SSH
-port = 22     # Internal container port
+type = "tcp"  # TCP proxy for SSH
+port = 22     # Internal port (mapped dynamically)
 
 [services.main.tcp]
-external_port = 8080  # Map Railway's external port
+# Allow Railway to assign an external port dynamically
+external_port = "auto"
 
+# Environment variable settings
+[services.main.env]
+SSH_PASSWORD = "adminpass"  # Set this securely in Railway's environment settings
